@@ -1,50 +1,28 @@
 name: Deploy to Minikube using GitHub Actions
 
 on: [push]
-
+  
 jobs:
-  build-and-deploy:
+  job1:
     runs-on: ubuntu-latest
-    name: Build Node.js Docker Image and Deploy to Minikube
+    name: build Node.js Docker Image and deploy to minikube
     steps:
     - uses: actions/checkout@v2
-
-    # Устанавливаем Minikube
-    - name: Start Minikube
+    - name: Start minikube
       uses: medyagh/setup-minikube@master
-      with:
-        driver: docker
-        addons: ingress
-
-    - name: Verify cluster is running
-      run: kubectl get nodes
-
-    - name: Build Docker image inside Minikube
-      run: |
-        eval $(minikube -p minikube docker-env)
-        docker build -t devopshint/node-app:latest .
-
-    - name: Verify Docker image
-      run: |
-        eval $(minikube -p minikube docker-env)
-        docker images | grep devopshint
-
-    - name: Deploy app to Minikube
-      run: kubectl apply -f k8s-node-app.yaml
-
-    # Шаг для ожидания, пока под станет доступным
-    - name: Wait for Pod to be Ready
-      run: kubectl wait --for=condition=ready pod -l app=nodejs-app --timeout=60s
-
-    # Проверка статуса подов
-    - name: Get Pods Status
+    - name: Try the cluster !
       run: kubectl get pods -A
-
-    # Получение логов из пода для диагностики
-    - name: Get Logs for NodeJS Pod
-      run: kubectl logs -l app=nodejs-app
-
-    - name: Show Service Info
+    - name: Build image
       run: |
-        minikube service list
-        minikube service nodejs-app --url
+          export SHELL=/bin/bash
+          eval $(minikube -p minikube docker-env)
+          docker build -f ./Dockerfile -t devopshint/node-app:latest .
+          echo -n "verifying images:"
+          docker images         
+    - name: Deploy to minikube
+      run:
+        kubectl apply -f k8s-node-app.yaml
+    - name: Test service URLs
+      run: |
+          minikube service list
+          minikube service nodejs-app --url
