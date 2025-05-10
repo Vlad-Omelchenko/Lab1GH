@@ -29,6 +29,6 @@ spec:
     app: nodejs-app
   type: NodePort
   ports:
-   -name: http
+  - name: http  # ← исправлен отступ
     port: 80
     targetPort: 3000
